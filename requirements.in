@@ -1,6 +1,5 @@
 bokeh==2.2.3
 captum==0.3.1
-dask[complete]==2021.2.0
 # evobench==0.3.1
 flake8==3.8.3
 jupyter==1.0.0
@@ -11,8 +10,6 @@ pandas==1.0.5
 pytest==5.4.3
 pytest-cov==2.10.0
 pytorch-lightning
-scikit-learn==0.23.1
-scikit-image==0.17.2
 -f https://download.pytorch.org/whl/torch_stable.html
 torch==1.8.1+cu111
   

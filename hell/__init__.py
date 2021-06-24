@@ -1,3 +1,3 @@
 # flake8: noqa
-from .data import Data
-from .surrogate import Surrogate
+from hell.nn.data import SurrogateData
+from hell.nn.surrogate import Surrogate

@@ -1,24 +1,21 @@
-from copy import deepcopy
 
-import pandas as pd
-from captum.attr import (DeepLift, DeepLiftShap, FeatureAblation,
-                         FeaturePermutation, GradientShap, GuidedBackprop,
-                         InputXGradient, IntegratedGradients, NoiseTunnel,
-                         Saliency, ShapleyValueSampling)
-from evobench.discrete import Trap
-from evosolve.discrete import dled
-from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-from pytorch_lightning.utilities.seed import seed_everything
+import plotly.io as pio
+from evobench.continuous import cec2013lsgo
+
+# from evosolve.continuous import dg2
+from shap import Explainer
+from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from xgboost import XGBRegressor
 
-from hell import Surrogate, SurrogateData, plot, util
-from hell.linkage import EmpiricalLinkage
+import hell
+from hell import SurrogateData, plot, util
 
-seed_everything(42)
+pio.renderers.default = "notebook"
 
-benchmark = Trap(blocks=[5] * 20, verbose=1)
+
+benchmark = cec2013lsgo.F4(verbose=1)
 
 x_preprocessing = Pipeline([
     ("standard-scaler", StandardScaler())
@@ -31,48 +28,64 @@ y_preprocessing = Pipeline([
 data = SurrogateData(
     benchmark,
     x_preprocessing, y_preprocessing,
-    n_samples=1e5, splits=(0.6, 0.2, 0.2),
-    batch_size=100,
-    # num_workers=os.cpu_count() // 2
+    n_samples=2e5, splits=(0.6, 0.2, 0.2),
 )
 
-surrogate = Surrogate(
-    benchmark.genome_size,
-    x_preprocessing, y_preprocessing,
-    n_layers=1, learning_rate=2e-4, weight_decay=1e-8
+surrogate = XGBRegressor(
+    n_estimators=200,
+    nthread=8
 )
 
-early_stop_callback = EarlyStopping(
-   monitor="val/r2",
-   min_delta=0.000,
-   patience=5,
-   verbose=False,
-   mode="max"
+surrogate.fit(
+    data.x_train, data.y_train,
+    eval_set=[(data.x_train, data.y_train), (data.x_val, data.y_val)],
+    early_stopping_rounds=10, verbose=False
 )
 
-trainer = Trainer(
-    max_epochs=2,
-    gpus=1,
-    progress_bar_refresh_rate=50,
-    callbacks=[early_stop_callback]
-)
+y_pred = surrogate.predict(data.x_test)
+r2_score(data.y_test, y_pred)
 
-trainer.fit(surrogate, data.data_module)
-surrogate.eval()
+plot.xgb_results(surrogate.evals_result())
 
-
-xai_tests = util.test_xais(
-    benchmark,
-    data.x_preprocessing,
-    decomposers=[
-        EmpiricalLinkage(benchmark, IntegratedGradients(surrogate), x_preprocessing),
-        EmpiricalLinkage(benchmark, DeepLift(surrogate), x_preprocessing),
-    ],
+benchmark.ffe = 0
+hell_results = util.test_decomposer(
+    hell.EmpiricalLinkage(
+        benchmark,
+        Explainer(surrogate),
+        data.x_preprocessing
+    ),
     n_samples=100
 )
+print(benchmark.ffe)
 
-dled_tests = util.test_decomposer(
-    dled.EmpiricalLinkage(benchmark), n_samples=100
-)
 
-foo = 2
+# benchmark.ffe = 0
+# dg2_results = util.test_decomposer(dg2.EmpiricalLinkage(benchmark), n_samples=100)
+# print(benchmark.ffe)
+
+# %%
+# results = pd.concat([hell_results, dg2_results])
+
+# # %%
+# plot.hit_ratio(results)
+
+# # %%
+# plot.ranking_metric(
+#     results,
+#     metric="mean_reciprocal_rank",
+#     title="Mean Reciprocal Rank"
+# )
+
+# # %%
+# plot.ranking_metric(
+#     results,
+#     metric="mean_average_precision",
+#     title="Mean Average Precision"
+# )
+
+# # %%
+# plot.ranking_metric(
+#     results,
+#     metric="ndcg",
+#     title="NDCG"
+# )

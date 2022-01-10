@@ -1,15 +1,12 @@
-bokeh==2.2.3
-captum==0.3.1
 # evobench==0.3.1
-flake8==3.8.3
+flake8==3.9.2
 jupyter==1.0.0
 jupyter_contrib_nbextensions==0.5.1
+kaleido==0.2.1
 lazy==1.4
-plotly==4.14.3
-pandas==1.0.5
+plotly==5.3.1
 pytest==5.4.3
 pytest-cov==2.10.0
-pytorch-lightning
--f https://download.pytorch.org/whl/torch_stable.html
-torch==1.8.1+cu111
-  
+scikit-learn==1.0
+shap==0.39.0
+xgboost==1.4.2

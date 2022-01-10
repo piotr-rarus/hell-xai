@@ -1,12 +1,12 @@
-import torch
-from captum.attr import Attribution, IntegratedGradients, Saliency
 from evobench import Benchmark, Population, Solution
-from hell import Surrogate, SurrogateData
-from hell.conftest import LinkageHelpers
 from pytest import fixture
-from pytorch_lightning import Trainer
+from shap import Explainer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from xgboost import XGBRegressor
+
+from hell import SurrogateData
+from hell.conftest import LinkageHelpers
 
 from ..linkage import EmpiricalLinkage
 
@@ -25,38 +25,32 @@ def data(benchmark: Benchmark) -> SurrogateData:
         benchmark,
         x_preprocessing, y_preprocessing,
         n_samples=100, splits=(0.6, 0.2, 0.2),
-        batch_size=10,
     )
 
 
 @fixture(scope="module")
-def attribution(data: SurrogateData) -> Attribution:
+def explainer(data: SurrogateData) -> Explainer:
 
-    surrogate = Surrogate(
-        data.benchmark.genome_size,
-        data.x_preprocessing, data.y_preprocessing,
-        n_layers=0, learning_rate=1e-3, weight_decay=1e-6
+    pipeline = Pipeline(
+        steps=[
+            ("scaler", StandardScaler()),
+            ("xgb", XGBRegressor())
+        ]
     )
 
-    trainer = Trainer(
-        max_epochs=5,
-        gpus=1,
-        progress_bar_refresh_rate=50,
-    )
+    # surrogate = XGBRegressor()
+    pipeline.fit(data.x_train, data.y_train)
 
-    trainer.fit(surrogate, data.data_module)
-    surrogate.eval()
-
-    return Saliency(surrogate)
+    return Explainer(pipeline[-1])
 
 
 @fixture(scope="module")
 def empirical_linkage(
     data: SurrogateData,
-    attribution: Attribution
+    explainer: Explainer
 ) -> EmpiricalLinkage:
 
-    return EmpiricalLinkage(data.benchmark, attribution, data.x_preprocessing)
+    return EmpiricalLinkage(data.benchmark, explainer, data.x_preprocessing)
 
 
 def test_get_scrap(

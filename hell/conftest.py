@@ -1,11 +1,10 @@
 from typing import List
 
 import numpy as np
-from pytest import fixture
-
-from evosolve.linkage import LinkageScrap
 from evobench import Benchmark, Population, Solution
 from evobench.discrete import Trap
+from evosolve.linkage import LinkageScrap
+from pytest import fixture
 
 
 class LinkageHelpers:

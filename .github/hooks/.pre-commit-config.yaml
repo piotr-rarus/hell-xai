@@ -1,0 +1,44 @@
+exclude: '.git|.tox'
+default_stages: [commit]
+fail_fast: true
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      # - id: no-commit-to-branch
+      #   args: ['--branch', 'main']
+      - id: pretty-format-json
+      - id: trailing-whitespace
+
+  - repo: https://github.com/timothycrosley/isort
+    rev: 5.6.4
+    hooks:
+      - id: isort
+
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 4.0.1
+    hooks:
+      - id: flake8
+        additional_dependencies: [flake8-isort]
+
+  - repo: https://github.com/jazzband/pip-tools
+    rev: 6.1.0
+    hooks:
+      - id: pip-compile
+        name: pip-compile setup.py
+        files: ^(setup\.py|requirements\.txt)$
+      - id: pip-compile
+        name: pip-compile requirements-test.in
+        args: [requirements-test.in]
+        files: ^requirements-test\.(in|txt)$
+      - id: pip-compile
+        name: pip-compile requirements-dev.in
+        args: [requirements-dev.in]
+        files: ^requirements-dev\.(in|txt)$

@@ -46,3 +46,30 @@ def ranking_metric(results: pd.DataFrame, metric: str, title: str) -> go.Figure:
     )
 
     return fig
+
+
+def xgb_results(results) -> go.Figure:
+    fig = go.Figure()
+
+    train_trace = go.Scatter(
+        y=results["validation_0"]["rmse"],
+        name="train",
+        mode="lines"
+    )
+
+    val_trace = go.Scatter(
+        y=results["validation_1"]["rmse"],
+        name="val",
+        mode="lines"
+    )
+
+    fig.add_trace(train_trace)
+    fig.add_trace(val_trace)
+
+    fig.update_layout(
+        title="XGB fit",
+        xaxis_title="Iteration",
+        yaxis_title="RMSE"
+    )
+
+    return fig
